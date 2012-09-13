@@ -47,7 +47,10 @@ app.get '/worlds', (req, res) ->
     
     # Check that the file exists in S3
     if f.statusCode isnt 200
-      bugsnag.notify new Error("S3 Error"), f
+      bugsnag.notify new Error("S3 Error"),
+        status: f.statusCode
+        headers: f.headers
+      
       res.send(404)
       return
     
