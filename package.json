@@ -10,7 +10,8 @@
   "dependencies": {
     "coffee-script": "latest",
     "express": "latest",
-    "bugsnag": "latest"
+    "bugsnag": "latest",
+    "knox": "latest"
     },
     
   "engines": {
