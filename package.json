@@ -11,5 +11,10 @@
     "coffee-script": "latest",
     "express": "latest",
     "bugsnag": "latest"
+    },
+    
+  "engines": {
+    "node": "0.8.x",
+    "npm": "1.1.x"
   }
 }
