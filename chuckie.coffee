@@ -5,7 +5,7 @@
 http = require('http')
 url  = require('url')
 stream = require('stream')
-zlib = require('zlib')
+path = require('path')
 
 express = require('express')
 bugsnag = require('bugsnag')
@@ -41,7 +41,8 @@ app.configure ->
 
 
 app.get '/worlds', (req, res) ->
-  url = req.query.url
+  url = path.join('worlds', req.query.url)
+  
   file = s3.get(url)
   file.on 'response', (f) ->
     
