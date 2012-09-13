@@ -1,0 +1,15 @@
+{
+  "name": "chuckie",
+  "version": "0.0.1",
+  "private": true,
+  
+  "scripts": {
+    "start": "coffee chuckie"
+  },
+  
+  "dependencies": {
+    "coffee-script": "latest",
+    "express": "latest",
+    "bugsnag": "latest"
+  }
+}
