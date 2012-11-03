@@ -19,7 +19,11 @@ func worldsHandler(w http.ResponseWriter, r *http.Request) {
 	route := regexp.MustCompile(`^([\w]{24})\.zip$`)
 
 	if match := route.FindStringSubmatch(path); match != nil {
-		streamWorld(w, r, match[1])
+		filename := r.URL.Query().Get("name")
+		if filename == "" {
+			filename = match[1] + ".zip"
+		}
+		streamWorld(w, r, match[1], filename)
 		fmt.Println("[GET]", r.URL.Path, "– 200")
 	} else {
 		fmt.Println("[GET]", r.URL.Path, "– 404")
@@ -27,7 +31,7 @@ func worldsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func streamWorld(w http.ResponseWriter, r *http.Request, worldId string) {
+func streamWorld(w http.ResponseWriter, r *http.Request, worldId string, filename string) {
 	hexId := bson.ObjectIdHex(worldId)
 	s3key, err := readS3KeyForWorld(hexId)
 	if err != nil {
@@ -48,6 +52,10 @@ func streamWorld(w http.ResponseWriter, r *http.Request, worldId string) {
 		fmt.Println("failed to download archive", err)
 		http.Error(w, "failed to download archive", 500)
 	}
+
+	w.Header().Add("Content-Type", "application/zip")
+	w.Header().Add("Content-Disposition",
+		fmt.Sprintf("attachment; filename=%s", filename))
 
 	err = zipPath(w, tempPath)
 	if err != nil {
