@@ -1,1 +1,1 @@
-web: dl.partycloud.com
+web: ./chuckie
