@@ -17,8 +17,7 @@ func restoreDir(source string, dest string) error {
 	// or "s3://bucket/508b5c0ab75f04080000007b/data.tar.lzo"
 
 	if !strings.Contains(source, "s3://") {
-		bucket = os.Getenv("BUCKET")
-		source = "s3://" + bucket + "/worlds/" + source
+		source = "s3://" + os.Getenv("BUCKET") + "/worlds/" + source
 	}
 
 	restoreDirBin, _ := filepath.Abs("bin/restore-dir")
