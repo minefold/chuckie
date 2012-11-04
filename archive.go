@@ -17,7 +17,8 @@ func restoreDir(source string, dest string) error {
 	// or "s3://bucket/508b5c0ab75f04080000007b/data.tar.lzo"
 
 	if !strings.Contains(source, "s3://") {
-		source = "s3://minefold-production/worlds/" + source
+		bucket = os.Getenv("BUCKET")
+		source = "s3://" + bucket + "/worlds/" + source
 	}
 
 	restoreDirBin, _ := filepath.Abs("bin/restore-dir")
