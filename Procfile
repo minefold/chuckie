@@ -1,1 +1,1 @@
-web: coffee chuckie
+web: dl.partycloud.com
