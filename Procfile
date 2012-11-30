@@ -1,1 +1,1 @@
-web: chuckie
+web: ./chuckie

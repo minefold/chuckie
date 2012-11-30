@@ -6,19 +6,11 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 )
 
+// source is http url
 func restoreDir(source string, dest string) error {
 	var cmd *exec.Cmd
-
-	// source is:
-	// 	  "508b5c0ab75f04080000007b/data.tar.lzo"
-	// or "s3://bucket/508b5c0ab75f04080000007b/data.tar.lzo"
-
-	if !strings.Contains(source, "s3://") {
-		source = "s3://" + os.Getenv("BUCKET") + "/worlds/" + source
-	}
 
 	restoreDirBin, _ := filepath.Abs("bin/restore-dir")
 	cmd = exec.Command(restoreDirBin, source)

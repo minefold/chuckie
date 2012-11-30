@@ -33,9 +33,9 @@ func worldsHandler(w http.ResponseWriter, r *http.Request) {
 
 func streamWorld(w http.ResponseWriter, r *http.Request, worldId string, filename string) {
 	hexId := bson.ObjectIdHex(worldId)
-	s3key, err := readS3KeyForWorld(hexId)
+	url, err := readUrlForServer(hexId)
 	if err != nil {
-		fmt.Println("no s3 key for world", hexId.Hex())
+		fmt.Println("no url for world", hexId.Hex())
 		http.NotFound(w, r)
 	}
 
@@ -47,7 +47,7 @@ func streamWorld(w http.ResponseWriter, r *http.Request, worldId string, filenam
 
 	// TODO currently waits until all files have been extracted
 	// it could start zipping files straight away
-	err = restoreDir(s3key, tempPath)
+	err = restoreDir(url, tempPath)
 	if err != nil {
 		fmt.Println("failed to download archive", err)
 		http.Error(w, "failed to download archive", 500)
@@ -86,7 +86,7 @@ func main() {
 	http.HandleFunc(urlPrefix, worldsHandler) // redirect all urls to the handler function
 	http.HandleFunc("/", notFoundHandler)
 
-	fmt.Println("listening")
+	fmt.Println("listening on " + port)
 
 	http.ListenAndServe(":"+port, nil) // listen for connections at port 9999 on the local machine
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 	"net/url"
@@ -24,19 +25,26 @@ func openMongoSession(mongoUrl string) (session *mgo.Session, db *mgo.Database, 
 	return
 }
 
-func readS3KeyForWorld(id bson.ObjectId) (s3key string, err error) {
-	session, db, err := openMongoSession(os.Getenv("MONGO_URI"))
+func readUrlForServer(id bson.ObjectId) (url string, err error) {
+	session, db, err := openMongoSession(os.Getenv("MONGO_URL"))
 	if err != nil {
 		return
 	}
 	defer session.Close()
 
-	var world map[string]string
-	err = db.C("worlds").
+	var server map[string]interface{}
+	err = db.C("servers").
 		FindId(id).
-		Select(bson.M{"world_data_file": 1}).
-		One(&world)
+		One(&server)
+	if err != nil {
+		return
+	}
 
-	s3key = world["world_data_file"]
+	var snapshot map[string]interface{}
+	err = db.C("snapshots").
+		FindId(server["snapshot_id"]).
+		One(&snapshot)
+
+	url = fmt.Sprintf("%v", snapshot["url"])
 	return
 }
