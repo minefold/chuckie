@@ -32,6 +32,10 @@ func worldsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func streamWorld(w http.ResponseWriter, r *http.Request, worldId string, filename string) {
+	w.Header().Add("Content-Type", "application/zip")
+	w.Header().Add("Content-Disposition",
+		fmt.Sprintf("attachment; filename=%s", filename))
+	
 	hexId := bson.ObjectIdHex(worldId)
 	url, err := readUrlForServer(hexId)
 	if err != nil {
@@ -52,10 +56,6 @@ func streamWorld(w http.ResponseWriter, r *http.Request, worldId string, filenam
 		fmt.Println("failed to download archive", err)
 		http.Error(w, "failed to download archive", 500)
 	}
-
-	w.Header().Add("Content-Type", "application/zip")
-	w.Header().Add("Content-Disposition",
-		fmt.Sprintf("attachment; filename=%s", filename))
 
 	err = zipPath(w, tempPath)
 	if err != nil {

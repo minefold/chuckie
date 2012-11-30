@@ -39,6 +39,7 @@ func readUrlForServer(id bson.ObjectId) (url string, err error) {
 	if err != nil {
 		return
 	}
+	fmt.Println("server:", id, "snapshot_id:", server["snapshot_id"])
 
 	var snapshot map[string]interface{}
 	err = db.C("snapshots").
@@ -46,5 +47,7 @@ func readUrlForServer(id bson.ObjectId) (url string, err error) {
 		One(&snapshot)
 
 	url = fmt.Sprintf("%v", snapshot["url"])
+	fmt.Println("server:", id, "url:", url)
+	
 	return
 }
