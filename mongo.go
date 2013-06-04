@@ -32,8 +32,6 @@ func readUrlForServer(id bson.ObjectId) (url string, err error) {
 	}
 	defer session.Close()
 
-  fmt.Println(os.Getenv("MONGO_URL"), id)
-
 	var server map[string]interface{}
 	err = db.C("servers").
 		FindId(id).

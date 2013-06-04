@@ -25,7 +25,7 @@ func worldsHandler(w http.ResponseWriter, r *http.Request) {
 	if match := route.FindStringSubmatch(path); match != nil {
 		filename := r.URL.Query().Get("name")
 		if filename == "" {
-			filename = match[1] + ".zip"
+			filename = match[1]
 		}
 		streamWorld(w, r, match[1], filename)
 		fmt.Println("[GET]", r.URL.Path, "– 200")
@@ -38,7 +38,7 @@ func worldsHandler(w http.ResponseWriter, r *http.Request) {
 func streamWorld(w http.ResponseWriter, r *http.Request, worldId string, filename string) {
 	w.Header().Add("Content-Type", "application/zip")
 	w.Header().Add("Content-Disposition",
-		fmt.Sprintf("attachment; filename=%s", filename))
+		fmt.Sprintf("attachment; filename=%s.zip", filename))
 
 	hexId := bson.ObjectIdHex(worldId)
 	url, err := readUrlForServer(hexId)
@@ -60,8 +60,8 @@ func streamWorld(w http.ResponseWriter, r *http.Request, worldId string, filenam
 	watcher := NewWatcher(tempPath, 5*time.Second)
 	go watcher.Watch()
 	var wg sync.WaitGroup
-  wg.Add(1)
-	go zipFilesAsTheyAppear(tempPath, watcher.C, zip, &wg)
+	wg.Add(1)
+	go zipFilesAsTheyAppear(tempPath, filename, watcher.C, zip, &wg)
 
 	// start the download
 	err = restoreDir(url, tempPath)
@@ -71,14 +71,14 @@ func streamWorld(w http.ResponseWriter, r *http.Request, worldId string, filenam
 	}
 
 	watcher.Cancel()
-  wg.Wait()
+	wg.Wait()
 }
 
-func zipFilesAsTheyAppear(root string, files chan string, zip *zip.Writer, wg *sync.WaitGroup) {
-  defer wg.Done()
+func zipFilesAsTheyAppear(root, prefix string, files chan string, zip *zip.Writer, wg *sync.WaitGroup) {
+	defer wg.Done()
 	for path := range files {
 		fileName := path[len(root)+1:]
-		zipF, err := zip.Create(fileName)
+		zipF, err := zip.Create(prefix + "/" + fileName)
 		if err != nil {
 			fmt.Println("failed to write zip header", fileName)
 			return
@@ -86,12 +86,12 @@ func zipFilesAsTheyAppear(root string, files chan string, zip *zip.Writer, wg *s
 
 		f, err := os.Open(path)
 		if err != nil {
-			fmt.Println("failed to open path", path)
+			fmt.Println("failed to open path", path, err)
 			return
 		}
 		_, err = io.Copy(zipF, f)
 		if err != nil {
-			fmt.Println("failed to zip path", path)
+			fmt.Println("failed to zip path", path, err)
 			return
 		}
 	}
