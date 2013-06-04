@@ -1,13 +1,17 @@
 package main
 
 import (
+	"archive/zip"
 	"fmt"
+	"io"
 	"labix.org/v2/mgo/bson"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"sync"
+	"time"
 )
 
 const urlPrefix = "/worlds/"
@@ -35,11 +39,11 @@ func streamWorld(w http.ResponseWriter, r *http.Request, worldId string, filenam
 	w.Header().Add("Content-Type", "application/zip")
 	w.Header().Add("Content-Disposition",
 		fmt.Sprintf("attachment; filename=%s", filename))
-	
+
 	hexId := bson.ObjectIdHex(worldId)
 	url, err := readUrlForServer(hexId)
 	if err != nil {
-		fmt.Println("no url for world", hexId.Hex())
+		fmt.Println("no url for world", hexId.Hex(), err)
 		http.NotFound(w, r)
 	}
 
@@ -49,18 +53,47 @@ func streamWorld(w http.ResponseWriter, r *http.Request, worldId string, filenam
 		http.Error(w, "failed to create tempdir", 500)
 	}
 
-	// TODO currently waits until all files have been extracted
-	// it could start zipping files straight away
+	zip := zip.NewWriter(w)
+	defer zip.Close()
+
+	// Zip files as they are downloaded
+	watcher := NewWatcher(tempPath, 5*time.Second)
+	go watcher.Watch()
+	var wg sync.WaitGroup
+  wg.Add(1)
+	go zipFilesAsTheyAppear(tempPath, watcher.C, zip, &wg)
+
+	// start the download
 	err = restoreDir(url, tempPath)
 	if err != nil {
 		fmt.Println("failed to download archive", err)
 		http.Error(w, "failed to download archive", 500)
 	}
 
-	err = zipPath(w, tempPath)
-	if err != nil {
-		fmt.Println("failed to zip path", tempPath)
-		http.Error(w, "failed zip path", 500)
+	watcher.Cancel()
+  wg.Wait()
+}
+
+func zipFilesAsTheyAppear(root string, files chan string, zip *zip.Writer, wg *sync.WaitGroup) {
+  defer wg.Done()
+	for path := range files {
+		fileName := path[len(root)+1:]
+		zipF, err := zip.Create(fileName)
+		if err != nil {
+			fmt.Println("failed to write zip header", fileName)
+			return
+		}
+
+		f, err := os.Open(path)
+		if err != nil {
+			fmt.Println("failed to open path", path)
+			return
+		}
+		_, err = io.Copy(zipF, f)
+		if err != nil {
+			fmt.Println("failed to zip path", path)
+			return
+		}
 	}
 }
 
